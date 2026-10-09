@@ -53,33 +53,36 @@ def health_check():
     """Quick check that the API is alive — React polls this on startup."""
     return {"status" : "ok" , "active_sessions": len(sessions)}
 
-@app.post("/chat", response_model= ChatResponse)
+
+@app.post("/chat", response_model=ChatResponse)
 def chat(request: ChatRequest):
-    """
-    Main endpoint. Accepts a message, returns the agent's response.
-    Creates a new session if session_id is not provided.
-    """
     session_id = request.session_id or str(uuid.uuid4())
 
-    if(session_id not in sessions):
-        sessions[session_id] = HRAssistant()
-    
-    assistant = sessions[session_id]
-
-    # Prepend employee context if this is the first message
-    message=request.message
-    if request.employee_id and len(assistant.chat_history)==0:
-        message= f"[Employee ID: {request.employee_id}] {message}"
     try:
+        if session_id not in sessions:
+            sessions[session_id] = HRAssistant()
+
+        assistant = sessions[session_id]
+        message = request.message
+
+        if request.employee_id and len(assistant.chat_history) == 0:
+            message = f"[Employee ID: {request.employee_id}] {message}"
+
         response = assistant.chat(message)
-        return ChatResponse(response=response, session_id=session_id)
-    
+
+        return ChatResponse(
+            response=response,
+            session_id=session_id
+        )
+
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         raise HTTPException(
             status_code=500,
-            detail=f"Agent error: {str(e)}"
-        )
-    
+            detail=f"{type(e).__name__}: {str(e)}"
+        ) from e
+
 @app.post("/reset-session", response_model=SessionResponse)
 def reset_session(session_id: str):
     """
