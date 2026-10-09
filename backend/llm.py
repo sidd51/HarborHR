@@ -12,7 +12,7 @@ def get_llm():
    Centralised here so every file imports from one place.
   """
   return ChatGroq(
-    model="llama-3.3-70b-versatile",
+    model="openai/gpt-oss-120b",
     api_key= os.getenv("GROQ_API_KEY"),
     temperature=0,   #  0 = deterministic, better for tool use
     max_tokens=2048, #  Max number of tokens to generate.
